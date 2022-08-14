@@ -35,7 +35,7 @@ def song_cover(d, s):
     x = "ETC/"
     o = ".jpg"
     if c + o in os.listdir(m + x):
-        p(climage.convert(m + x + c + o, width=s, is_unicode=1), end="")
+        p(climage.convert(m + x + c + o, is_unicode=1, is_truecolor=1, is_256color=0, is_16color=0, is_8color=0, width=s), end="")
 
 
 def cover(j, k, s):
@@ -70,7 +70,7 @@ def z(path=m):
         song_cover(f_list[1], 30)
         for i, j in enumerate(f_list):
             if j != ".DS_Store":
-                p(j)
+                p(j, end=[", ", "\n"][len(f_list[:i]) % 3 != 0])
         if len(d_list) != 0:
             p("""
 ████──████─████──████──█──█─█────█────█████
@@ -82,7 +82,35 @@ def z(path=m):
             cover((m + a), d_getter(m + a), 30)
             for i, j in enumerate(d_list):
                 if j != "ETC":
-                    p(j)
+                    p(j, end=[", ", "\n"][len(d_list[:i]) % 2 != 0])
+
+
+def band(a):
+    s = "ETC/bands/"
+    p(climage.convert(m + s + a + ".jpg", is_truecolor=1, is_256color=0, is_16color=0, is_8color=0, is_unicode=1, width=50), end="")
+    print(open(m + s + a + ".txt").read())
+    c = r("какой альбом слушаем?: ")
+    back(c)
+    z(m + c)
+    g = m + c
+    f_list = []
+    p()
+    try:
+        for f in os.listdir(g):
+            if os.path.isfile(os.path.join(g, f)):
+                f_list.append(f)
+    finally:
+        f_list = sorted(f_list)
+        for i in f_list:
+            p(i)
+        time.sleep(3)
+        cover(g, f_list, dimens())
+        p("")
+        x = r("сначала/ с какой-то песни (1 - сначало/ любая другая цифра): ")
+        back(x)
+        for i in f_list[int(x) - 1 * (".DS_Store" not in f_list):]:
+            p(i + " ", end="")
+            play(g, i)
 
 
 def play(h, y):
@@ -92,9 +120,12 @@ def play(h, y):
     while f == 0:
         mixer.music.load(str(h) + "/" + y)
         mixer.music.play()
-        a = r("остановить (да): ")
+        u = mixer.Sound(str(h) + "/" + y).get_length()
+        i = round(u % 60)
+        p(str(int(u//60)) + ":" + "0" * (i < 10) + str(i))
+        a = r("остановить/ следующий: ")
         back(a)
-        if a == "да":
+        if a == "остановить":
             mixer.music.pause()
             v = r("начать(начнёт сначала, никак подругому на данной момент)? (да): ")
             back(v)
@@ -103,20 +134,22 @@ def play(h, y):
             else:
                 mixer.music.unpause()
                 pause = 1
+        else:
+            p("закончил играть")
+            skip()
         if pause != 1:
-            f = skip()
+            skip()
         pause = 0
-    else:
-        p("закончил играть")
         f = skip()
 
 
 def home():
     z()
+    p()
     p("используйте 'вернуться' или '<=', чтобы выйти из проигрывателя")
-    a = r("вы ищите альбом(да/нет)?: ")
+    a = r("альбом/ песня/ группа: ")
     back(a)
-    if a == "да":
+    if a == "альбом":
         if r("песню/ целый альбом: ") == "песню":
             h = m + r("напишите названия альбома сюда: ")
             f_list = []
@@ -126,9 +159,10 @@ def home():
                     if os.path.isfile(os.path.join(h, f)):
                         f_list.append(f)
             finally:
-                cover(h, f_list, 100)
-                p("")
+                cover(h, f_list, dimens())
+                p()
             z(h)
+            p()
             c = r("напишите название песни сюда: ")
             back(c)
             play(h, c)
@@ -150,26 +184,33 @@ def home():
                 time.sleep(3)
                 cover(g, f_list, dimens())
                 p("")
-                x = r("сначала/ с какой-то песни (1 - сначало/ любая другая цифра):")
+                x = r("сначала/ с какой-то песни (1 - сначало/ любая другая цифра): ")
                 back(x)
-                for i in f_list[int(x) - 1:]:
-                    p(i + " ")
+                for i in f_list[int(x) - 1 * (".DS_Store" not in f_list):]:
+                    p(i + " ", end="")
                     play(g, i)
             menu()
-    else:
+    elif a == "песня":
         d = r("напишите название песни сюда: ")
         back(d)
         song_cover(d, dimens())
         p("Играю: " + d)
         play(m, d)
-    menu()
-
-
-def menu():
-    if r("торрент/ дом: ") == "дом":
-        home()
     else:
-        torrent()
+        f_list = []
+        g = m + "ETC/bands"
+        try:
+            for f in os.listdir(g):
+                if os.path.isfile(os.path.join(g, f)):
+                    f_list.append(f)
+        finally:
+            f_list = sorted(f_list)
+            for i in f_list:
+                if ".txt" in i:
+                    p(i[:i.find(".")])
+        b = r("группа: ")
+        band(b)
+    menu()
 
 
 def torrent():
@@ -197,10 +238,12 @@ def torrent():
     p("метадату у нас!")
 
     p("Поехали", handle.name())
+    state_str = ["жду", "проверяю", "скачиваю метадату", "торрентю", "закончил"]
+    s = handle.status()
+    p('(down: %.1f kb/s up: %.1f kB/s дорогие сидеры: %d) %s ' % (
+     s.download_rate / 1000, s.upload_rate / 1000, s.num_peers, state_str[s.state]))
     if r("стримить торрент(если высокая скорость)? да/нет: ") == "нет":
         while handle.status().state != torrent_status.seeding:
-            s = handle.status()
-            state_str = ["жду", "проверяю", "скачиваю метадату", "торрентю", "закончил"]
             p('%.2f%% скачено (down: %.1f kb/s up: %.1f kB/s дорогие сидеры: %d) %s ' % (
                 s.progress * 100, s.download_rate / 1000, s.upload_rate / 1000, s.num_peers, state_str[s.state]))
             time.sleep(5)
@@ -211,6 +254,14 @@ def torrent():
         menu()
     else:
         menu()
+
+
+def menu():
+    if r("торрент/ дом: ") == "дом":
+        home()
+    else:
+        torrent()
+
 
 
 p("""
