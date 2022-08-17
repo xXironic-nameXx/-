@@ -35,11 +35,13 @@ def song_cover(d, s):
     x = "ETC/"
     o = ".jpg"
     if c + o in os.listdir(m + x):
-        p(climage.convert(m + x + c + o, is_unicode=1, is_truecolor=1, is_256color=0, is_16color=0, is_8color=0, width=s), end="")
+        p(climage.convert(m + x + c + o, is_unicode=1, is_truecolor=1, is_256color=0, is_16color=0, is_8color=0,
+                          width=s), end="")
 
 
 def cover(j, k, s):
-    p(climage.convert(str(j) + "/art.jpg", is_truecolor=1, is_256color=0, is_16color=0, is_8color=0, is_unicode=1, width=s) if "art.jpg" in k else "", end="")
+    p(climage.convert(str(j) + "/art.jpg", is_truecolor=1, is_256color=0, is_16color=0, is_8color=0, is_unicode=1,
+                      width=s) if "art.jpg" in k else "", end="")
 
 
 def dimens():
@@ -87,8 +89,13 @@ def z(path=m):
 
 def band(a):
     s = "ETC/bands/"
-    p(climage.convert(m + s + a + ".jpg", is_truecolor=1, is_256color=0, is_16color=0, is_8color=0, is_unicode=1, width=50), end="")
-    print(open(m + s + a + ".txt").read())
+    p(climage.convert(m + s + a + ".jpg", is_truecolor=1, is_256color=0, is_16color=0, is_8color=0, is_unicode=1,
+                      width=50), end="")
+    x = open(m + s + a + ".txt").read()
+    albums = eval(x[x.find("[") + 1:x.find("]")])
+    p(x[x.find('"""') + 3:x.rfind('"""') - 2])
+    p()
+    p(albums)
     c = r("какой альбом слушаем?: ")
     back(c)
     z(m + c)
@@ -100,7 +107,10 @@ def band(a):
             if os.path.isfile(os.path.join(g, f)):
                 f_list.append(f)
     finally:
-        f_list = sorted(f_list)
+        if r("размешать (да/нет)") == "нет":
+            f_list = sorted(f_list)
+        else:
+            f_list = f_list
         for i in f_list:
             p(i)
         time.sleep(3)
@@ -116,13 +126,9 @@ def band(a):
 def play(h, y):
     mixer.init()
     f = False in [i not in y for i in [".txt", ".m3u", ".jpg", ".png", ".DS_Store"]]
-    pause = 0
     while f == 0:
         mixer.music.load(str(h) + "/" + y)
         mixer.music.play()
-        u = mixer.Sound(str(h) + "/" + y).get_length()
-        i = round(u % 60)
-        p(str(int(u//60)) + ":" + "0" * (i < 10) + str(i))
         a = r("остановить/ следующий: ")
         back(a)
         if a == "остановить":
@@ -135,12 +141,14 @@ def play(h, y):
                 mixer.music.unpause()
                 pause = 1
         else:
-            p("закончил играть")
-            skip()
+            mixer.music.unload()
+            f = skip()
+            pause = 0
         if pause != 1:
-            skip()
-        pause = 0
-        f = skip()
+            f = skip()
+    else:
+        p("закончил играть")
+
 
 
 def home():
@@ -178,7 +186,10 @@ def home():
                     if os.path.isfile(os.path.join(g, f)):
                         f_list.append(f)
             finally:
-                f_list = sorted(f_list)
+                if r("размешать (да/нет): ") == "нет":
+                    f_list = sorted(f_list)
+                else:
+                    f_list = f_list
                 for i in f_list:
                     p(i)
                 time.sleep(3)
@@ -194,7 +205,7 @@ def home():
         d = r("напишите название песни сюда: ")
         back(d)
         song_cover(d, dimens())
-        p("Играю: " + d)
+        p("Играю: " + d, end=" ")
         play(m, d)
     else:
         f_list = []
@@ -209,6 +220,7 @@ def home():
                 if ".txt" in i:
                     p(i[:i.find(".")])
         b = r("группа: ")
+        back(b)
         band(b)
     menu()
 
@@ -241,7 +253,7 @@ def torrent():
     state_str = ["жду", "проверяю", "скачиваю метадату", "торрентю", "закончил"]
     s = handle.status()
     p('(down: %.1f kb/s up: %.1f kB/s дорогие сидеры: %d) %s ' % (
-     s.download_rate / 1000, s.upload_rate / 1000, s.num_peers, state_str[s.state]))
+        s.download_rate / 1000, s.upload_rate / 1000, s.num_peers, state_str[s.state]))
     if r("стримить торрент(если высокая скорость)? да/нет: ") == "нет":
         while handle.status().state != torrent_status.seeding:
             p('%.2f%% скачено (down: %.1f kb/s up: %.1f kB/s дорогие сидеры: %d) %s ' % (
@@ -261,7 +273,6 @@ def menu():
         home()
     else:
         torrent()
-
 
 
 p("""
@@ -303,25 +314,25 @@ elif n == "инструкция":
     1) Вводить нужно опции 
     нужно чётко, как напи-
     сано 
-    
+
     2) постройте папки сле-
     дующим образом:
-    
+
     |волна
         |music
             ETC*
             {ваши альбомы}
             {ваши песни}
-            
+
     * ETC всегда
     должен стоят на 1ом 
     месте, альбомы и песни
     могут быть вразброс
-    
+
     3) Используем обычные 
     формаиты: .mp3, .FLAC,
     .wav, и.т.д
-    
+
     4) Картинки песен дол-
     жды быть, как название.
     Картинки ставьте в пап-
@@ -330,9 +341,9 @@ elif n == "инструкция":
     *если в название песни
     имеются точки, уберите 
     их
-    
+
     пр файл: звезда.jpg
-    
+
     пр* : вол.на => волна
 
     5) Картинки альбомов
@@ -347,7 +358,7 @@ elif n == "инструкция":
     бого откуда-либов меню
     напишите "вернуться" или
     "<="
-     
+
     """)
     if r("я прочитал(да/нет) ") == "да":
         menu()
