@@ -1,5 +1,6 @@
 from libtorrent import *
 from pygame import mixer
+from tinytag import TinyTag
 import time
 import datetime
 import os
@@ -8,6 +9,10 @@ import climage
 p = print
 r = input
 m = "./music/"
+
+
+def audio_get(a, b):
+    return TinyTag.get(a + "/" + b[".DS_Store" in b])
 
 
 def skip():
@@ -87,48 +92,93 @@ def z(path=m):
                     p(j, end=[", ", "\n"][len(d_list[:i]) % 2 != 0])
 
 
-def band(a):
-    s = "ETC/bands/"
-    p(climage.convert(m + s + a + ".jpg", is_truecolor=1, is_256color=0, is_16color=0, is_8color=0, is_unicode=1,
-                      width=50), end="")
-    x = open(m + s + a + ".txt").read()
-    albums = eval(x[x.find("[") + 1:x.find("]")])
-    p(x[x.find('"""') + 3:x.rfind('"""') - 2])
-    p()
-    p(albums)
-    c = r("какой альбом слушаем?: ")
-    back(c)
-    z(m + c)
-    g = m + c
+def album():
+    f = r("песню из альбома или целый альбом (песню/ целый): ")
+    back(f)
+    if f == "песню":
+        h = m + r("напишите названия альбома сюда: ")
+        f_list = []
+
+        try:
+            for f in os.listdir(h):
+                if os.path.isfile(os.path.join(h, f)):
+                    f_list.append(f)
+        finally:
+            d = dimens()
+            cover(h, f_list, d)
+            audio = audio_get(h, f_list)
+            a = audio.artist + " - " + audio.album
+            p(" " * (d//2 - len(a)//2) + a)
+            p()
+        z(h)
+        p()
+        c = r("напишите название песни сюда: ")
+        back(c)
+        p("Играю: " + c)
+        play(h, c)
+        menu()
+    else:
+        c = r("напишите его названия сюда: ")
+        back(c)
+        g = m + c
+        f_list = []
+        p()
+        try:
+            for f in os.listdir(g):
+                if os.path.isfile(os.path.join(g, f)):
+                    f_list.append(f)
+        finally:
+            if r("размешать (да/нет): ") == "нет":
+                f_list = sorted(f_list)
+            else:
+                f_list = f_list
+            for i in f_list:
+                p(i)
+            time.sleep(3)
+            d = dimens()
+            cover(g, f_list, d)
+            audio = audio_get(g, f_list)
+            a = audio.artist + " - " + audio.album
+            p(" " * (d//2 - len(a)//2) + a)
+            x = r("сначала/ с какой-то песни (1 - сначало/ любая другая цифра): ")
+            back(x)
+            for i in f_list[int(x) - 1 * (".DS_Store" not in f_list):]:
+                p("Играю: " + i, end=" ")
+                play(g, i)
+
+
+def band():
     f_list = []
-    p()
+    bands = set()
+    albums = []
     try:
-        for f in os.listdir(g):
-            if os.path.isfile(os.path.join(g, f)):
-                f_list.append(f)
+        for f in os.listdir(m):
+            if os.path.isdir(os.path.join(m, f)):
+                if f != "ETC":
+                    f_list.append(f)
     finally:
-        if r("размешать (да/нет)") == "нет":
-            f_list = sorted(f_list)
-        else:
-            f_list = f_list
-        for i in f_list:
-            p(i)
-        time.sleep(3)
-        cover(g, f_list, dimens())
-        p("")
-        x = r("сначала/ с какой-то песни (1 - сначало/ любая другая цифра): ")
-        back(x)
-        for i in f_list[int(x) - 1 * (".DS_Store" not in f_list):]:
-            p(i + " ", end="")
-            play(g, i)
+        f_list = sorted(f_list)
+    for j in f_list:
+        b = 0
+        for i in d_getter(m + j):
+            if ".flac" in i:
+                b = i
+        audio = TinyTag.get(m + j + "/" + b)
+        bands.add(str(audio.artist))
+        albums.append([j, str(audio.artist)])
+    return [list(bands), albums]
 
 
 def play(h, y):
     mixer.init()
+    dur = mixer.Sound(h + "/" + y).get_length()
+    i = round(dur % 60)
+    p(str(int(dur // 60)) + ":" + "0" * (i < 10) + str(i))
     f = False in [i not in y for i in [".txt", ".m3u", ".jpg", ".png", ".DS_Store"]]
     while f == 0:
-        mixer.music.load(str(h) + "/" + y)
+        mixer.music.load(h + "/" + y)
         mixer.music.play()
+        p()
         a = r("остановить/ следующий: ")
         back(a)
         if a == "остановить":
@@ -155,73 +205,35 @@ def home():
     z()
     p()
     p("используйте 'вернуться' или '<=', чтобы выйти из проигрывателя")
-    a = r("альбом/ песня/ группа: ")
+    a = r("альбом/ песня/ группы: ")
     back(a)
     if a == "альбом":
-        if r("песню/ целый альбом: ") == "песню":
-            h = m + r("напишите названия альбома сюда: ")
-            f_list = []
-
-            try:
-                for f in os.listdir(h):
-                    if os.path.isfile(os.path.join(h, f)):
-                        f_list.append(f)
-            finally:
-                cover(h, f_list, dimens())
-                p()
-            z(h)
-            p()
-            c = r("напишите название песни сюда: ")
-            back(c)
-            play(h, c)
-            menu()
-        else:
-            c = r("напишите его названия сюда: ")
-            g = m + c
-            back(c)
-            f_list = []
-            p()
-            try:
-                for f in os.listdir(g):
-                    if os.path.isfile(os.path.join(g, f)):
-                        f_list.append(f)
-            finally:
-                if r("размешать (да/нет): ") == "нет":
-                    f_list = sorted(f_list)
-                else:
-                    f_list = f_list
-                for i in f_list:
-                    p(i)
-                time.sleep(3)
-                cover(g, f_list, dimens())
-                p("")
-                x = r("сначала/ с какой-то песни (1 - сначало/ любая другая цифра): ")
-                back(x)
-                for i in f_list[int(x) - 1 * (".DS_Store" not in f_list):]:
-                    p(i + " ", end="")
-                    play(g, i)
-            menu()
+        album()
+        menu()
     elif a == "песня":
         d = r("напишите название песни сюда: ")
         back(d)
-        song_cover(d, dimens())
+        di = dimens()
+        song_cover(d, di)
         p("Играю: " + d, end=" ")
         play(m, d)
     else:
-        f_list = []
-        g = m + "ETC/bands"
-        try:
-            for f in os.listdir(g):
-                if os.path.isfile(os.path.join(g, f)):
-                    f_list.append(f)
-        finally:
-            f_list = sorted(f_list)
-            for i in f_list:
-                if ".txt" in i:
-                    p(i[:i.find(".")])
-        b = r("группа: ")
-        back(b)
-        band(b)
+        bands = band()[0]
+        albums = band()[1]
+        for i in range(len(bands)):
+            p(bands[i], end=[", ", "\n"][i % 2 == 0])
+        p()
+        y = r("кого сегодня послушаем: ")
+        back(y)
+        e = "ETC/bands"
+        p(climage.convert(m + e + "/" + y + ".jpg", is_truecolor=1, is_256color=0, is_16color=0, is_8color=0, is_unicode=1,
+                          width=50) if y + ".jpg" in d_getter(m + e) else "", end="")
+        for i in albums:
+            if y in i:
+                print(i[0], end=[", ", "\n"][albums.index(i) % 2 == 0])
+        album()
+        p()
+        p()
     menu()
 
 
