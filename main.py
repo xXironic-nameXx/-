@@ -12,7 +12,7 @@ m = "./music/"
 
 
 def audio_get(a, b):
-    return TinyTag.get(a + "/" + b[".DS_Store" in b])
+    return TinyTag.get(a + "/" + b[sum(i in b for i in [".txt", ".cue", ".m3u", ".jpg", ".png", ".DS_Store"]) + 1])
 
 
 def skip():
@@ -97,24 +97,17 @@ def album():
     back(f)
     if f == "песню":
         h = m + r("напишите названия альбома сюда: ")
-        f_list = []
-
-        try:
-            for f in os.listdir(h):
-                if os.path.isfile(os.path.join(h, f)):
-                    f_list.append(f)
-        finally:
-            d = dimens()
-            cover(h, f_list, d)
-            audio = audio_get(h, f_list)
-            a = audio.artist + " - " + audio.album
-            p(" " * (d//2 - len(a)//2) + a)
-            p()
-        z(h)
+        f_list = d_getter(h)
         p()
+        z(h)
+        d = dimens()
+        cover(h, f_list, d)
+        audio = audio_get(h, f_list)
+        a = str(audio.artist) + " - " + str(audio.album)
+        p(" " * (d // 2 - len(a) // 2) + a)
         c = r("напишите название песни сюда: ")
         back(c)
-        p("Играю: " + c)
+        p("Играю: " + c, end=" ")
         play(h, c)
         menu()
     else:
@@ -138,7 +131,7 @@ def album():
             d = dimens()
             cover(g, f_list, d)
             audio = audio_get(g, f_list)
-            a = audio.artist + " - " + audio.album
+            a = str(audio.artist) + " - " + str(audio.album)
             p(" " * (d//2 - len(a)//2) + a)
             x = r("сначала/ с какой-то песни (1 - сначало/ любая другая цифра): ")
             back(x)
@@ -166,15 +159,18 @@ def band():
         audio = TinyTag.get(m + j + "/" + b)
         bands.add(str(audio.artist))
         albums.append([j, str(audio.artist)])
-    return [list(bands), albums]
+    return [list(bands), sorted(albums)]
 
 
 def play(h, y):
     mixer.init()
-    dur = mixer.Sound(h + "/" + y).get_length()
+    f = False in [i not in y for i in [".cue", ".txt", ".m3u", ".jpg", ".png", ".DS_Store"]]
+    if f == 0:
+        dur = audio_get(h, [0, y]).duration
+    else:
+        dur = 0
     i = round(dur % 60)
     p(str(int(dur // 60)) + ":" + "0" * (i < 10) + str(i))
-    f = False in [i not in y for i in [".txt", ".m3u", ".jpg", ".png", ".DS_Store"]]
     while f == 0:
         mixer.music.load(h + "/" + y)
         mixer.music.play()
@@ -183,7 +179,7 @@ def play(h, y):
         back(a)
         if a == "остановить":
             mixer.music.pause()
-            v = r("начать(начнёт сначала, никак подругому на данной момент)? (да): ")
+            v = r("начать(начнёт сначала, никак по-другому на данной момент)? (да): ")
             back(v)
             while v != "да":
                 continue
@@ -200,12 +196,12 @@ def play(h, y):
         p("закончил играть")
 
 
-
 def home():
     z()
     p()
     p("используйте 'вернуться' или '<=', чтобы выйти из проигрывателя")
     a = r("альбом/ песня/ группы: ")
+    p()
     back(a)
     if a == "альбом":
         album()
@@ -221,19 +217,24 @@ def home():
         bands = band()[0]
         albums = band()[1]
         for i in range(len(bands)):
-            p(bands[i], end=[", ", "\n"][i % 2 == 0])
+            p(bands[i], end=["\n", ", "][i % 3 == 0])
         p()
         y = r("кого сегодня послушаем: ")
         back(y)
         e = "ETC/bands"
         p(climage.convert(m + e + "/" + y + ".jpg", is_truecolor=1, is_256color=0, is_16color=0, is_8color=0, is_unicode=1,
                           width=50) if y + ".jpg" in d_getter(m + e) else "", end="")
+        p("""
+████──████─████──████──█──█─█────█
+█──█──█──█─█────█────█─████─█────█
+█▀▀█──█──█─█▀▀█─█────█─█▐─█─█▀▀█─█
+█──█─██──█─████──████──█──█─████─█
+        """)
         for i in albums:
             if y in i:
-                print(i[0], end=[", ", "\n"][albums.index(i) % 2 == 0])
+                print(i[0], end=["\n", ", "][albums.index(i) % 3 == 0])
+        p()
         album()
-        p()
-        p()
     menu()
 
 
