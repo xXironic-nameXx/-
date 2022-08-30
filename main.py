@@ -11,20 +11,24 @@ r = input
 m = "./music/"
 
 
+# получает информации о аудио-файле
 def audio_get(a, b):
     return TinyTag.get(a + "/" + b[sum(i in b for i in [".txt", ".cue", ".m3u", ".jpg", ".png", ".DS_Store"]) + 1])
 
 
+# смотрит, если музыка играет
 def skip():
     if not mixer.music.get_busy():
         return 1
 
 
+# возвращает на главное меню
 def back(a):
     if a == "вернуться" or a == "<=":
         menu()
 
 
+# получает файлы в dir'e
 def d_getter(g):
     d = []
     try:
@@ -35,6 +39,7 @@ def d_getter(g):
         return sorted(d)
 
 
+# получает обложку пени
 def song_cover(d, s):
     c = d[:d.find(".")]
     x = "ETC/"
@@ -44,17 +49,20 @@ def song_cover(d, s):
                           width=s), end="")
 
 
+# получает обложку альбома
 def cover(j, k, s):
     p(climage.convert(str(j) + "/art.jpg", is_truecolor=1, is_256color=0, is_16color=0, is_8color=0, is_unicode=1,
                       width=s) if "art.jpg" in k else "", end="")
 
 
+# спрашивает о размере обложки
 def dimens():
     x = r("большая картика? (да/нет): ")
     back(x)
     return [50, 100][x == "да"]
 
 
+# смотрит на файлы и альбомы любого  dir'a
 def z(path=m):
     f_list = []
     d_list = []
@@ -92,6 +100,7 @@ def z(path=m):
                     p(j, end=[", ", "\n"][len(d_list[:i]) % 2 != 0])
 
 
+# спрашивает о выбранном альбоме
 def album():
     f = r("песню из альбома или целый альбом (песню/ целый): ")
     back(f)
@@ -140,6 +149,7 @@ def album():
                 play(g, i)
 
 
+# выдаёт информацию о музыкальной группе                
 def band():
     f_list = []
     bands = set()
@@ -162,6 +172,7 @@ def band():
     return [list(bands), sorted(albums)]
 
 
+# проигрывает песню
 def play(h, y):
     mixer.init()
     f = False in [i not in y for i in [".cue", ".txt", ".m3u", ".jpg", ".png", ".DS_Store"]]
@@ -196,6 +207,7 @@ def play(h, y):
         p("закончил играть")
 
 
+# главная страница        
 def home():
     z()
     p()
@@ -238,6 +250,7 @@ def home():
     menu()
 
 
+# торрент    
 def torrent():
     p("""
 ────────────────────────
@@ -281,6 +294,7 @@ def torrent():
         menu()
 
 
+# главное меню        
 def menu():
     if r("торрент/ дом: ") == "дом":
         home()
@@ -288,6 +302,7 @@ def menu():
         torrent()
 
 
+# что вас встречает        
 p("""
 ▄▄▄▄▄────▄▄▄───────██████──────▄───▄──▄▄▄▄▄
 ██──█───█───█─────█▒▒▒▒▒▒█─────█───█──█──██
